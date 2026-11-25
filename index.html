@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Course Creator AI</title>
+  <link rel="stylesheet" href="style.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+<!-- Toast -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ══════════════ INTRO VIDEO OVERLAY ══════════════ -->
+<div id="introOverlay" class="intro-overlay">
+  <video id="introVideo" class="intro-video" autoplay playsinline
+    src="intro.mp4">
+  </video>
+  <div class="intro-controls">
+    <button class="intro-skip-btn" onclick="skipIntro()">Skip Intro ›</button>
+    <button class="intro-mute-btn" id="introMuteBtn" onclick="toggleIntroMute()">🔊 Sound On</button>
+    <div class="intro-progress-wrap">
+      <div class="intro-progress-bar" id="introProgressBar"></div>
+    </div>
+  </div>
+  <div class="intro-brand">
+    <span class="intro-brand-icon">🎓</span>
+    <span class="intro-brand-text">Course Creator AI</span>
+  </div>
+</div>
+
+<!-- ══════════════ LANDING PAGE ══════════════ -->
+<div id="landingPage" class="landing-page" style="display:none">
+  <div class="landing-bg-shapes">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+  </div>
+  <div class="landing-content">
+    <div class="landing-logo">
+      <div class="landing-logo-icon">🎓</div>
+      <span class="landing-logo-text">Course Creator AI</span>
+    </div>
+    <h1 class="landing-title">Learn Anything.<br/><span class="landing-highlight">Powered by AI.</span></h1>
+    <p class="landing-sub">Generate complete 7-module courses on any topic instantly. Quiz yourself, track progress, and stay focused.</p>
+    <div class="landing-actions">
+      <button class="btn-landing-primary" onclick="showAuthModal('signup')">Get Started Free</button>
+      <button class="btn-landing-secondary" onclick="showAuthModal('login')">Log In</button>
+      <button class="btn-landing-skip" onclick="skipAuth()">Skip for now →</button>
+    </div>
+    <div class="landing-features">
+      <div class="landing-feature"><span class="lf-icon">🤖</span><span class="lf-text">AI Powered</span></div>
+      <div class="landing-feature"><span class="lf-icon">🎬</span><span class="lf-text">Video Courses</span></div>
+      <div class="landing-feature"><span class="lf-icon">🧠</span><span class="lf-text">Smart Quizzes</span></div>
+      <div class="landing-feature"><span class="lf-icon">👁️</span><span class="lf-text">Focus Tracker</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ AUTH MODAL ══════════════ -->
+<div class="modal-overlay" id="authModal">
+  <div class="auth-modal">
+    <button class="auth-modal-close" onclick="closeAuthModal()">✕</button>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Log In</button>
+      <button class="auth-tab" id="tabSignup" onclick="switchAuthTab('signup')">Sign Up</button>
+    </div>
+    <div id="authLogin">
+      <div class="auth-form-group"><label>Email</label><input type="email" id="loginEmail" placeholder="you@example.com"/></div>
+      <div class="auth-form-group"><label>Password</label><input type="password" id="loginPassword" placeholder="Your password"/></div>
+      <button class="btn-auth-submit" onclick="doLogin()">Log In</button>
+      <p class="auth-switch">No account? <a href="#" onclick="switchAuthTab('signup')">Sign up free</a></p>
+    </div>
+    <div id="authSignup" style="display:none">
+      <div class="auth-form-group"><label>Full Name</label><input type="text" id="signupName" placeholder="Jane Doe"/></div>
+      <div class="auth-form-group"><label>Email</label><input type="email" id="signupEmail" placeholder="you@example.com"/></div>
+      <div class="auth-form-group"><label>Password</label><input type="password" id="signupPassword" placeholder="Min 6 characters"/></div>
+      <button class="btn-auth-submit" onclick="doSignup()">Create Account</button>
+      <p class="auth-switch">Have an account? <a href="#" onclick="switchAuthTab('login')">Log in</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MAIN APP ══════════════ -->
+<div id="mainApp" class="app-layout" style="display:none">
+
+  <!-- ══════════ VocabBoost-style NAV — 4 rows ══════════ -->
+  <nav class="vb-nav" id="topnav">
+
+    <!-- ROW 1: Logo + Right icons (no search bar) -->
+    <div class="vb-topbar">
+      <div class="vb-logo">
+        <span class="vb-logo-icon">🎓</span>
+        <span class="vb-logo-text">CourseCreator</span>
+      </div>
+      <div class="vb-topbar-centre"></div>
+      <div class="vb-topbar-right">
+        <div class="vb-points-chip">⭐ <span id="topbarPoints">0</span> pts</div>
+        <button class="vb-icon-btn" id="voiceNavBtn" onclick="toggleVoiceNav()" title="Voice Navigation">🎙️</button>
+        <button class="vb-icon-btn" id="focusToggleBtn" onclick="toggleEngagement()" title="Focus Detector">👁️</button>
+        <button class="vb-icon-btn" onclick="toggleTheme()" title="Toggle Theme"><span id="themeIcon">🌙</span></button>
+        <div class="user-chip" id="userChip" style="display:none">
+          <div class="user-chip-avatar" id="userChipAvatar">U</div>
+          <div class="user-chip-name" id="userChipName">User</div>
+        </div>
+        <button class="btn-logout" id="logoutBtn" onclick="doLogout()" style="display:none" title="Logout">🚪</button>
+        <div class="voice-status" id="voiceStatus" style="display:none">🎙️ Listening…</div>
+      </div>
+    </div>
+
+    <!-- ROW 2: Decorative icon strip -->
+    <div class="vb-icon-strip">
+      <div class="vb-strip-icon active" id="strip-learning" onclick="toggleSuper('learning')" title="Learn">📚</div>
+      <div class="vb-strip-icon" id="strip-rewards"  onclick="toggleSuper('rewards')"  title="Rewards">⭐</div>
+      <div class="vb-strip-icon" id="strip-saved"    onclick="toggleSuper('saved')"    title="Saved">🔖</div>
+      <div class="vb-strip-icon" id="strip-tools"    onclick="toggleSuper('tools')"    title="Tools">🛠️</div>
+      <div class="vb-strip-icon" id="strip-account"  onclick="toggleSuper('account')"  title="Account">👤</div>
+    </div>
+
+    <!-- ROW 3: Main nav tabs — bold solid active (VocabBoost style) -->
+    <div class="vb-main-tabs">
+      <button class="vb-main-tab active" id="super-learning" onclick="toggleSuper('learning')">LEARN</button>
+      <button class="vb-main-tab" id="super-rewards"         onclick="toggleSuper('rewards')">REWARDS</button>
+      <button class="vb-main-tab" id="super-saved"           onclick="toggleSuper('saved')">DATA</button>
+      <button class="vb-main-tab" id="super-tools"           onclick="toggleSuper('tools')">TOOLS</button>
+      <button class="vb-main-tab" id="super-account"         onclick="toggleSuper('account')">ACCOUNT</button>
+    </div>
+
+    <!-- ROW 4: Sub-tabs (change per active section) -->
+    <div class="vb-sub-tabs" id="subrow-learning">
+      <button class="vb-sub-tab active" id="nav-written"  onclick="showSection('written')">WRITTEN COURSE</button>
+      <button class="vb-sub-tab" id="nav-video"           onclick="showSection('video')">VIDEO COURSE</button>
+      <button class="vb-sub-tab" id="nav-quiz"            onclick="showSection('quiz')">QUIZ CENTER</button>
+    </div>
+    <div class="vb-sub-tabs" id="subrow-rewards" style="display:none">
+      <button class="vb-sub-tab" id="nav-points" onclick="showSection('points')">POINTS</button>
+      <button class="vb-sub-tab" id="nav-levels" onclick="showSection('levels')">LEVELS</button>
+    </div>
+    <div class="vb-sub-tabs" id="subrow-saved" style="display:none">
+      <button class="vb-sub-tab" id="nav-saved-notes" onclick="showSection('saved-notes')">SAVED NOTES</button>
+      <button class="vb-sub-tab" id="nav-saved"        onclick="showSection('saved')">SAVED TOPICS</button>
+    </div>
+    <div class="vb-sub-tabs" id="subrow-tools" style="display:none">
+      <button class="vb-sub-tab" id="nav-upload"      onclick="showSection('upload')">UPLOAD FILE</button>
+      <button class="vb-sub-tab" id="nav-engagement"  onclick="showSection('engagement')">FOCUS REPORT</button>
+    </div>
+    <div class="vb-sub-tabs" id="subrow-account" style="display:none">
+      <button class="vb-sub-tab" id="nav-settings"         onclick="showSection('settings')">SETTINGS</button>
+      <button class="vb-sub-tab" id="nav-feedback"         onclick="showSection('feedback')">FEEDBACK</button>
+      <button class="vb-sub-tab" id="nav-feedback-history" onclick="showSection('feedback-history')">MY SUBMISSIONS</button>
+      <button class="vb-sub-tab" id="nav-faq"              onclick="showSection('faq')">FAQs</button>
+    </div>
+    
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content" id="mainContent">
+    <div class="breadcrumb-bar"><div class="breadcrumb" id="breadcrumb">Learning / Written Course</div></div>
+
+    <!-- Focus bar -->
+    <div class="focus-bar" id="focusBar" style="display:none">
+      <div class="focus-bar-inner">
+        <video id="focusVideo" autoplay muted playsinline style="width:80px;height:60px;border-radius:6px;object-fit:cover;"></video>
+        <canvas id="focusCanvas" style="display:none"></canvas>
+        <div class="focus-status" id="focusStatus">👁️ Focus detector active</div>
+        <div class="focus-score-display">Focus: <span id="focusScoreDisplay">100</span>%</div>
+      </div>
+    </div>
+
+    <!-- ══ WRITTEN COURSE ══ -->
+    <section class="section active" id="sectionWritten">
+      <div class="compact-hero">
+        <h2>📚 Written Course</h2>
+        <p class="section-sub">Enter any topic — AI generates a complete 7-module course with images.</p>
+        <div class="search-container">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="topicInput" placeholder="e.g. Machine Learning, Guitar, Blockchain…" autocomplete="off"/>
+            <button class="btn-generate" id="generateBtn" onclick="generateCourse()">Generate →</button>
+          </div>
+          <div class="search-actions">
+            <button class="btn-ghost" onclick="saveTopic()">🔖 Save Topic</button>
+          </div>
+        </div>
+        <div class="saved-topics-bar" id="savedTopicsBar"></div>
+      </div>
+      <div id="courseOutput"></div>
+    </section>
+
+    <!-- ══ VIDEO COURSE ══ -->
+    <section class="section" id="sectionVideo">
+      <div class="section-header">
+        <h2>🎬 Video Course</h2>
+        <p class="section-sub">Search a YouTube video — get AI transcript + quiz</p>
+      </div>
+      <div class="vc-search-row">
+        <input type="text" id="vcSearchInput" class="vc-input" placeholder="Search YouTube videos…"/>
+        <button class="btn-primary" onclick="searchYouTube()">🔍 Search</button>
+      </div>
+      <div id="vcVideoGrid" class="vc-video-grid"></div>
+      <div id="vcSelectedPanel" style="display:none">
+        <div class="vc-selected-card">
+          <img id="vcSelectedThumb" src="" alt="thumbnail"/>
+          <div class="vc-selected-info">
+            <div class="vc-selected-title" id="vcSelectedTitle"></div>
+            <div class="vc-selected-channel" id="vcSelectedChannel"></div>
+            <button class="btn-primary" id="vcGenerateBtn" onclick="generateVideoContent()">🚀 Generate Transcript + Quiz</button>
+          </div>
+        </div>
+        <div class="vc-pipeline" id="vcPipeline">
+          <div class="vc-step" id="vcStep1"><span>⬇️</span><span>Download Audio</span></div>
+          <div class="vc-step" id="vcStep2"><span>🎙️</span><span>Transcribe</span></div>
+          <div class="vc-step" id="vcStep3"><span>🔍</span><span>RAG Search</span></div>
+          <div class="vc-step" id="vcStep4"><span>📝</span><span>Generate Quiz</span></div>
+        </div>
+        <div class="vc-status-msg" id="vcStatusMsg"></div>
+      </div>
+      <div id="vcResultPanel" style="display:none"></div>
+    </section>
+
+    <!-- ══ QUIZ CENTER ══ -->
+    <section class="section" id="sectionQuiz">
+      <div class="section-header"><h2>🎯 Quiz Center</h2><p class="section-sub">Practice quizzes from your generated courses</p></div>
+      <div id="quizCenterOutput"></div>
+    </section>
+
+    <!-- ══ POINTS ══ -->
+    <section class="section" id="sectionPoints">
+      <div class="section-header"><h2>⭐ Points</h2><p class="section-sub">Easy=5pts · Medium=10pts · Hard=15pts per correct answer</p></div>
+      <div id="pointsOutput"></div>
+    </section>
+
+    <!-- ══ LEVELS ══ -->
+    <section class="section" id="sectionLevels">
+      <div class="section-header">
+        <h2>📈 Levels</h2>
+        <p class="section-sub">Each difficulty tracks independently</p>
+      </div>
+      <div class="levels-grid">
+        <div class="level-card-big easy-card">
+          <div class="level-card-icon">🟢</div>
+          <div class="level-card-name">Easy</div>
+          <div class="level-card-pts">Complete at 500 pts</div>
+          <div class="level-card-status unlocked" id="easyStatus">🔓 Unlocked</div>
+          <div class="level-card-desc">+5 pts per correct answer</div>
+          <div class="level-pts-display" id="easyPtsDisplay">0 / 500 pts</div>
+          <div class="level-mini-bar"><div class="level-mini-fill easy-fill" id="easyFill" style="width:0%"></div></div>
+        </div>
+        <div class="level-card-big medium-card">
+          <div class="level-card-icon">🟡</div>
+          <div class="level-card-name">Medium</div>
+          <div class="level-card-pts">Complete at 1000 pts</div>
+          <div class="level-card-status unlocked" id="mediumStatus">🔓 Unlocked</div>
+          <div class="level-card-desc">+10 pts per correct answer</div>
+          <div class="level-pts-display" id="mediumPtsDisplay">0 / 1000 pts</div>
+          <div class="level-mini-bar"><div class="level-mini-fill medium-fill" id="mediumFill" style="width:0%"></div></div>
+        </div>
+        <div class="level-card-big hard-card">
+          <div class="level-card-icon">🔴</div>
+          <div class="level-card-name">Hard</div>
+          <div class="level-card-pts">Complete at 1500 pts</div>
+          <div class="level-card-status unlocked" id="hardStatus">🔓 Unlocked</div>
+          <div class="level-card-desc">+15 pts per correct answer</div>
+          <div class="level-pts-display" id="hardPtsDisplay">0 / 1500 pts</div>
+          <div class="level-mini-bar"><div class="level-mini-fill hard-fill" id="hardFill" style="width:0%"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SAVED NOTES ══ -->
+    <section class="section" id="sectionSavedNotes">
+      <div class="section-header"><h2>🗒️ Saved Notes</h2><p class="section-sub">All your module notes</p></div>
+      <div id="savedNotesGrid" class="saved-notes-grid">
+        <div class="empty-state"><div class="empty-icon">🗒️</div><div class="empty-title">No saved notes yet</div></div>
+      </div>
+    </section>
+
+    <!-- ══ SAVED TOPICS ══ -->
+    <section class="section" id="sectionSaved">
+      <div class="section-header"><h2>🔖 Saved Topics</h2><p class="section-sub">Click any topic to generate instantly</p></div>
+      <div class="saved-topics-grid" id="savedTopicsGrid">
+        <div class="empty-state"><div class="empty-icon">🔖</div><div class="empty-title">No saved topics yet</div></div>
+      </div>
+    </section>
+
+    <!-- ══ UPLOAD FILE ══ -->
+    <section class="section" id="sectionUpload">
+      <div class="section-header">
+        <h2>📸 Upload File</h2>
+        <p class="section-sub">Upload images or PDFs — AI Vision reads and answers questions</p>
+      </div>
+      <div class="upload-layout">
+        <div class="upload-panel">
+          <div class="upload-dropzone" id="uploadDropzone"
+            onclick="document.getElementById('fileInput').click()"
+            ondragover="uploadDragOver(event)" ondragleave="uploadDragLeave(event)" ondrop="uploadDrop(event)">
+            <div class="upload-drop-icon">📂</div>
+            <div class="upload-drop-title">Drop files here or click to upload</div>
+            <div class="upload-drop-sub">Supports JPG, PNG, WEBP, GIF, PDF</div>
+            <input type="file" id="fileInput" multiple accept="image/*,.pdf" style="display:none" onchange="handleFileSelect(event)"/>
+          </div>
+          <div class="upload-previews" id="uploadPreviews"></div>
+          <div class="upload-actions" id="uploadActions" style="display:none">
+            <button class="btn-outline upload-clear-btn" onclick="clearUploadFiles()">🗑 Clear Files</button>
+            <span class="upload-file-count" id="uploadFileCount"></span>
+          </div>
+        </div>
+        <div class="upload-chat-panel">
+          <div class="upload-chat-messages" id="uploadChatMessages">
+            <div class="upload-chat-welcome" id="uploadChatWelcome">
+              <div class="ucw-icon">🤖</div>
+              <div class="ucw-title">Upload files to get started</div>
+              <div class="ucw-desc">Ask anything — "Summarize this", "Generate questions", "Explain the diagram"</div>
+            </div>
+          </div>
+          <div class="upload-chat-input-row">
+            <input type="text" id="uploadChatInput" class="upload-chat-input" placeholder="Ask something about your files…"
+              onkeydown="if(event.key==='Enter')sendUploadMessage()"/>
+            <button class="upload-send-btn" id="uploadSendBtn" onclick="sendUploadMessage()">➤</button>
+          </div>
+          <div class="upload-chat-footer">
+            <button class="upload-clear-chat-btn" onclick="clearUploadChat()">🗑 Clear Chat</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ ENGAGEMENT REPORT ══ -->
+    <section class="section" id="sectionEngagement">
+      <div class="section-header">
+        <h2>👁️ Focus Report</h2>
+        <p class="section-sub">Face detection tracks attentiveness during study sessions</p>
+      </div>
+      <div id="engagementReportOutput">
+        <div class="empty-state"><div class="empty-icon">👁️</div><div class="empty-title">No sessions yet</div><div class="empty-desc">Enable focus detector while studying to see your report here.</div></div>
+      </div>
+    </section>
+
+    <!-- ══ SETTINGS ══ -->
+    <section class="section" id="sectionSettings">
+      <div class="section-header"><h2>⚙️ Settings</h2><p class="section-sub">Customize your experience</p></div>
+      <div class="settings-card">
+        <div class="settings-group">
+          <label class="settings-label">🌐 Course Language</label>
+          <p class="settings-desc">Courses will be generated in your selected language</p>
+          <select id="languageSelect" class="settings-select" onchange="saveLanguage()">
+            <option value="English">English</option>
+            <option value="Hindi">Hindi</option>
+            <option value="Spanish">Spanish</option>
+            <option value="French">French</option>
+            <option value="German">German</option>
+            <option value="Arabic">Arabic</option>
+            <option value="Portuguese">Portuguese</option>
+            <option value="Chinese">Chinese</option>
+            <option value="Japanese">Japanese</option>
+            <option value="Korean">Korean</option>
+          </select>
+        </div>
+        <div class="settings-group">
+          <label class="settings-label">🎨 Theme</label>
+          <p class="settings-desc">Switch between light and dark mode</p>
+          <button class="btn-outline" onclick="toggleTheme()"><span id="themeLabel">Dark Mode</span></button>
+        </div>
+        <div class="settings-group">
+          <label class="settings-label">👤 Account</label>
+          <p class="settings-desc" id="settingsAccountDesc">Not logged in</p>
+          <button class="btn-outline" onclick="showAuthModal('login')" id="settingsLoginBtn">Log In</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ FEEDBACK ══ -->
+    <section class="section" id="sectionFeedback">
+      <div class="section-header">
+        <h2>💬 Submit Feedback</h2>
+        <p class="section-sub">AI analyzes your message sentiment automatically.</p>
+      </div>
+      <div class="feedback-card">
+        <div class="feedback-form" id="feedbackForm">
+          <div class="form-row">
+            <div class="form-group"><label>Your Name</label><input type="text" id="fbName" placeholder="John Doe"/></div>
+            <div class="form-group"><label>Email (optional)</label><input type="email" id="fbEmail" placeholder="john@example.com"/></div>
+          </div>
+          <div class="form-group"><label>Topic You Studied</label><input type="text" id="fbTopic" placeholder="e.g. Machine Learning"/></div>
+          <div class="form-group">
+            <label>Rating</label>
+            <div class="rating-stars" id="ratingStars">
+              <button type="button" class="star-btn active" data-val="1" onclick="setRating(1)">⭐</button>
+              <button type="button" class="star-btn active" data-val="2" onclick="setRating(2)">⭐</button>
+              <button type="button" class="star-btn active" data-val="3" onclick="setRating(3)">⭐</button>
+              <button type="button" class="star-btn active" data-val="4" onclick="setRating(4)">⭐</button>
+              <button type="button" class="star-btn active" data-val="5" onclick="setRating(5)">⭐</button>
+            </div>
+          </div>
+          <div class="form-group"><label>Your Message</label><textarea id="fbMessage" placeholder="Tell us what you loved or what we can improve…"></textarea></div>
+         <button type="button" class="btn-primary" onclick="submitFeedback(event)">🚀 Submit Feedback</button>
+        </div>
+        <div class="feedback-success" id="feedbackSuccess" style="display:none">
+          <div class="feedback-success-icon">🎉</div>
+          <h3>Thank you!</h3>
+          <div class="sentiment-result" id="sentimentResult"></div>
+          <button class="btn-outline" onclick="resetFeedback()" style="margin-top:16px">Submit Another</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ FEEDBACK HISTORY ══ -->
+    <section class="section" id="sectionFeedbackHistory">
+      <div class="section-header"><h2>📋 My Submissions</h2><p class="section-sub">Your submitted feedback with sentiment analysis</p></div>
+      <div id="feedbackHistoryGrid" class="feedback-history-grid">
+        <div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No submissions yet</div></div>
+      </div>
+    </section>
+
+
+    <!-- ══ FAQ ══ -->
+    <section class="section" id="sectionFaq">
+      <div class="section-header">
+        <h2>❓ Frequently Asked Questions</h2>
+        <p class="section-sub">Everything you need to know about Course Creator AI</p>
+      </div>
+      <div class="faq-list">
+
+        <div class="faq-item open">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>What is Course Creator AI?</span>
+            <span class="faq-chevron">▼</span>
+          </div>
+          <div class="faq-answer">
+            <span class="faq-tag">General</span>
+            Course Creator AI is an AI-powered learning platform that generates complete 7-module courses on any topic you enter. Powered by Groq's LLaMA 3.3 model, it produces structured content with learning objectives, in-depth explanations, and key takeaways — all in seconds. You can also search YouTube videos to get AI-generated transcripts and quizzes, track your focus while studying, and earn points through difficulty-based quizzes.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>How does the AI generate courses?</span>
+            <span class="faq-chevron">▼</span>
+          </div>
+          <div class="faq-answer">
+            <span class="faq-tag">Technology</span>
+            When you type a topic and click Generate, your request is sent to our Flask backend which constructs a detailed prompt and calls the Groq API (LLaMA 3.3 70B model). The AI acts as a combined researcher, evaluator, and course writer — returning a structured JSON object with 7 modules, each containing learning objectives, 300+ words of content, key takeaways, and a difficulty level. Module images are generated with Cloudflare Workers AI (FLUX.1 schnell).
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>How does the Video Course feature work?</span>
+            <span class="faq-chevron">▼</span>
+          </div>
+          <div class="faq-answer">
+            <span class="faq-tag">Features</span>
+            Search any topic to find YouTube videos. Once you select a video and click Generate, the backend downloads the audio using yt-dlp, uploads it to AssemblyAI for transcription, then splits the transcript into 400-word chunks stored in a SQLite FTS5 database. The most relevant chunks are retrieved using full-text search and passed to Groq to generate a 10-question quiz. Transcripts are cached — so the same video is never re-processed.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>Do I need to create an account?</span>
+            <span class="faq-chevron">▼</span>
+          </div>
+          <div class="faq-answer">
+            <span class="faq-tag">Account</span>
+            No — you can use the platform as a guest by clicking "Skip for now" on the landing page. However, creating a free account lets you save courses to the database, access your course history, set a preferred language for course generation, submit and view feedback, and have your last generated course automatically restored when you return.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>What is the Focus Detector?</span>
+            <span class="faq-chevron">▼</span>
+          </div>
+          <div class="faq-answer">
+            <span class="faq-tag">Features</span>
+            The Focus Detector uses your device camera and a face detection model to check whether you are looking at the screen while studying. If you look away for too long, a gentle nudge appears to bring your attention back. Each study session records your total time, distracted time, and a focus score (0–100%). All session data is available in the Focus Report section and saved per user.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>How does the points and levels system work?</span>
+            <span class="faq-chevron">▼</span>
+          </div>
+          <div class="faq-answer">
+            <span class="faq-tag">Gamification</span>
+            Every correct quiz answer earns you points based on difficulty — Easy gives 5 pts, Medium gives 10 pts, and Hard gives 15 pts. Points are tracked separately per difficulty level. Each level has a completion threshold: Easy completes at 500 pts, Medium at 1000 pts, and Hard at 1500 pts. All levels are unlocked from the start so you can attempt any difficulty at any time. Your progress is saved locally in your browser.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>Can I generate courses in languages other than English?</span>
+            <span class="faq-chevron">▼</span>
+          </div>
+          <div class="faq-answer">
+            <span class="faq-tag">Languages</span>
+            Yes. Go to Feedback → Settings and select your preferred language from the dropdown. Supported languages include Hindi, Spanish, French, German, Arabic, Portuguese, Chinese, Japanese, and Korean. Once set, all generated courses will be written entirely in your chosen language. Your preference is saved to your account if you are logged in.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>What is the Upload File feature?</span>
+            <span class="faq-chevron">▼</span>
+          </div>
+          <div class="faq-answer">
+            <span class="faq-tag">Features</span>
+            You can upload images (JPG, PNG, WEBP, GIF) or PDF documents and ask the AI questions about them. The files are sent to Groq's vision model (Llama 4 Scout) which reads diagrams, handwritten notes, textbook pages, or any visual content and gives you a detailed answer. You can have a full multi-turn conversation with follow-up questions about the same uploaded files.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>Is my data stored securely?</span>
+            <span class="faq-chevron">▼</span>
+          </div>
+          <div class="faq-answer">
+            <span class="faq-tag">Privacy</span>
+            User accounts, courses, feedback, quiz attempts, and engagement sessions are stored in a local SQLite database on the server. Passwords are hashed using bcrypt before storage — they are never stored in plain text. Video transcripts are cached in a separate SQLite FTS5 database. Your quiz points and theme preference are stored in your browser's localStorage and never sent to the server.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-question" onclick="toggleFaq(this)">
+            <span>Why does video processing take a few minutes?</span>
+            <span class="faq-chevron">▼</span>
+          </div>
+          <div class="faq-answer">
+            <span class="faq-tag">Performance</span>
+            The first time you process a video, the backend downloads its audio (yt-dlp), uploads it to AssemblyAI, waits for transcription to complete, then runs the quiz generation through Groq. This pipeline can take 1–3 minutes depending on video length and API response times. However, once processed, the transcript is permanently cached in SQLite — so if you or any user selects the same video again, the quiz generates almost instantly without any re-downloading or re-transcription.
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- ══ FOOTER ══ -->
+  <footer class="app-footer">
+    <div class="footer-inner">
+      <div class="footer-left">
+        <img class="footer-img" src="footer-image.png" alt="Course Creator AI"/>
+      </div>
+      <div class="footer-right">
+        <div class="footer-brand-name">Course Creator AI</div>
+        <p class="footer-tagline">Empowering learners worldwide with AI-generated courses, smart quizzes, and focus tracking technology.</p>
+        <div class="footer-contact-heading">Get in Touch</div>
+        <div class="footer-link-row"><span>Email</span><a href="iamCHERISH2004@email.com">iamCHERISH2004@gmail.com</a></div>
+        <div class="footer-link-row"><span>GitHub</span><a href="https://github.com/Cherish684" target="_blank">github.com/Cherish684</a></div>
+        <div class="footer-link-row"><span>LinkedIn</span><a href="https://linkedin.com/in/Cherish684" target="_blank">linkedin.com/in/Cherish684</a></div>
+      </div>
+    </div>
+    <div class="footer-bottom">© 2026 AI Course Creator </div>
+  </footer>
+
+</div><!-- end #mainApp -->
+
+<!-- ══ QUIZ MODAL ══ -->
+<div class="modal-overlay" id="quizModal">
+  <div class="quiz-modal">
+    <div class="quiz-modal-header">
+      <div class="quiz-modal-title" id="quizModalTitle">📝 Quiz</div>
+      <button class="quiz-modal-close" onclick="closeQuiz()">✕</button>
+    </div>
+    <div class="quiz-modal-body" id="quizModalBody"></div>
+  </div>
+</div>
+
+<!-- ══ DISTRACTION NUDGE ══ -->
+<div class="distraction-nudge" id="distractionNudge" style="display:none">
+  <div class="nudge-icon">👀</div>
+  <div class="nudge-text">Hey, stay focused!</div>
+  <button onclick="dismissNudge()">✕</button>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

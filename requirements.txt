@@ -1,0 +1,12 @@
+flask
+flask-cors
+groq
+python-dotenv
+requests
+scikit-learn
+transformers
+torch
+chromadb
+assemblyai
+yt-dlp
+jsPDF
