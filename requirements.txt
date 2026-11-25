@@ -10,3 +10,4 @@ chromadb
 assemblyai
 yt-dlp
 jsPDF
+gunicorn
